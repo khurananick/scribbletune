@@ -104,6 +104,7 @@ module.exports = params => {
 	 */
 
 	let effects = [];
+  let sequence = null;
 
 	if (params.effects) {
 		effects = params.effects.map(eff => new Tone[eff]);
@@ -128,19 +129,24 @@ module.exports = params => {
 	if (params.player) {
 		params.player.chain(...effects, Tone.Master);
 		// This implies, a player object was already created (either by user or by Scribbletune during channel creation)
-		return new Tone.Sequence(_getPlayerSeqFn(params.player), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+		sequence = new Tone.Sequence(_getPlayerSeqFn(params.player), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+    sequence.base_instrument = params.player; // base_instrument's connect method allows you to record using MediaRecorder
 	}
 
 	if (params.sampler) {
 		params.sampler.chain(...effects, Tone.Master);
 		// This implies, a sampler object was already created (either by user or by Scribbletune during channel creation)
-		return new Tone.Sequence(_getSamplerSeqFn(params), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+		sequence = new Tone.Sequence(_getSamplerSeqFn(params), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+    sequence.base_instrument = params.sampler; // base_instrument's connect method allows you to record using MediaRecorder
 	}
 
 	if (params.instrument) {
 		params.instrument.chain(...effects, Tone.Master);
 		// This implies, the instrument was already created (either by user or by Scribbletune during channel creation)
 		// Unlike player, the instrument needs the entire params object to construct a sequence
-		return new Tone.Sequence(params.instrument.voices ? _getInstrSeqFn(params) : _getMonoInstrSeqFn(params), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+		sequence = new Tone.Sequence(params.instrument.voices ? _getInstrSeqFn(params) : _getMonoInstrSeqFn(params), utils.expandStr(params.pattern), params.subdiv || defaultSubdiv);
+    sequence.base_instrument = params.instrument; // base_instrument's connect method allows you to record using MediaRecorder
 	}
+
+  return sequence;
 };
